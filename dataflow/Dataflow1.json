@@ -1,0 +1,89 @@
+{
+	"name": "Dataflow1",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "SourceDataset_tv1",
+						"type": "DatasetReference"
+					},
+					"name": "source1"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "DelimitedText1",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "Parquet1",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				}
+			],
+			"transformations": [
+				{
+					"name": "split1"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "select1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          {Trip ID} as integer,",
+				"          Duration as short,",
+				"          {Start Date} as string,",
+				"          {Start Station} as string,",
+				"          {Start Terminal} as short,",
+				"          {End Date} as string,",
+				"          {End Station} as string,",
+				"          {End Terminal} as short,",
+				"          {Bike #} as short,",
+				"          {Subscriber Type} as string,",
+				"          {Zip Code} as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     limit: 1000,",
+				"     ignoreNoFilesFound: false,",
+				"     partitionBy('roundRobin', 10)) ~> source1",
+				"source1 split(Duration>100,",
+				"     disjoint: false) ~> split1@(long, short)",
+				"split1@long aggregate(groupBy({Start Station}),",
+				"     totalduration = sum(Duration)) ~> aggregate1",
+				"aggregate1 select(mapColumn(",
+				"          StartStation = {Start Station},",
+				"          totalduration",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"split1@short sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> sink2"
+			]
+		}
+	}
+}
