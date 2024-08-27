@@ -1,0 +1,46 @@
+{
+	"name": "demoflowlet",
+	"properties": {
+		"type": "Flowlet",
+		"typeProperties": {
+			"sources": [],
+			"sinks": [],
+			"transformations": [
+				{
+					"name": "split1"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "input1"
+				},
+				{
+					"name": "output1"
+				}
+			],
+			"scriptLines": [
+				"input(output(",
+				"          {Trip ID} as integer,",
+				"          Duration as short,",
+				"          {Start Date} as string,",
+				"          {Start Station} as string,",
+				"          {Start Terminal} as short,",
+				"          {End Date} as string,",
+				"          {End Station} as string,",
+				"          {End Terminal} as short,",
+				"          {Bike #} as short,",
+				"          {Subscriber Type} as string,",
+				"          {Zip Code} as string",
+				"     ),",
+				"     order: 0,",
+				"     allowSchemaDrift: true) ~> input1",
+				"input1 split(Duration>$splitval,",
+				"     disjoint: false) ~> split1@(long, short)",
+				"split1@long aggregate(groupBy({Start Station}),",
+				"     totalduration = sum(Duration)) ~> aggregate1",
+				"split1@short output() ~> output1"
+			]
+		}
+	}
+}
